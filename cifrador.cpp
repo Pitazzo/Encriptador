@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <cstring>
 #include <stdlib.h>
@@ -98,19 +99,36 @@ void cifrarFichero(ifstream& in, ofstream& out, char extension[], BigInteger n, 
 	for(int i = 0; i < longitudExtension; i++){
 		cabecera = cabecera + BigInteger(int(extension[i]))*potencia(1000,longitudExtension-1-i);
 	}
+	
 	int bytesClave = numeroDeBytes(n);
-	int bloquesCifrados = 0;
+	in.seekg (0, in.end);
+    int longitud = in.tellg();
+    in.seekg (0, in.beg);
+    int numBytes = numeroDeBytes(n);
+    int bloques = int(ceil(double(longitud)/double(numBytes)));
+    int bloquesRecorridos = 1;
+	cout << "Comenzando descifrado..." << endl;
+	cout << "El fichero original ocupa " 
+	<< longitud << " bytes (" << bloques << " bloques de memoria)" <<endl;
+	
 	cabecera = exponenciacion(cabecera,e,n);
 	escribirEntero(out,cabecera,bytesClave);
-	temp = leerEntero(in, bytesClave-1);
-	temp = exponenciacion(temp,e,n);
-	escribirEntero(out,temp,bytesClave);
+	
+
+	cout << "Se ha cifrado el " << setprecision(3)
+	<< (double(bloquesRecorridos)/bloques)*100 << "% del fichero       " << flush;
+	
+
 	while(!in.eof()){
+		cout << '\r';
+		cout << "Se ha cifrado el " << setprecision(3)
+		<< (double(bloquesRecorridos)/bloques)*100 << "% del fichero       " << flush;
 		temp = leerEntero(in, bytesClave-1);
 		temp = exponenciacion(temp,e,n);
 		escribirEntero(out,temp,bytesClave);
+		bloquesRecorridos++;
 	}
-	cout << "Cifrado concluido" << endl;
+	cout << endl << "Cifrado concluido" << endl;
 	
 }
 
@@ -122,7 +140,8 @@ void descifrarFichero(ifstream& in, char salida[], BigInteger n, BigInteger d){
     int bloques = int(ceil(double(longitud)/double(numBytes)));
     int bloquesRecorridos = 0;
 	cout << "Comenzando descifrado..." << endl;
-	cout << "El fichero ocupa " << longitud << " bytes (" << bloques << " bloques de memoria)" <<endl;
+	cout << "El fichero cifrado ocupa " 
+	<< longitud << " bytes (" << bloques << " bloques de memoria)" <<endl;
 
 	char extension[10];
 	BigInteger cabecera = leerEntero(in, numBytes);
@@ -132,7 +151,8 @@ void descifrarFichero(ifstream& in, char salida[], BigInteger n, BigInteger d){
 	bloquesRecorridos++;
 	
 	cout << "El fichero descifrado es del tipo ." << extension << endl;
-	cout << "Se han descifrado " << bloquesRecorridos*numBytes << "/" << bloques*numBytes << " bytes" << flush;
+	cout << "Se ha descifrado el " << setprecision(3)
+	<< (double(bloquesRecorridos)/bloques)*100 << "% del fichero       " << flush;
 	strcat(salida, ".");
 	strcat(salida, extension);
 	ofstream out;
@@ -148,8 +168,8 @@ void descifrarFichero(ifstream& in, char salida[], BigInteger n, BigInteger d){
 			temp = leerEntero(in, numBytes);
 			bloquesRecorridos++;
 			cout << '\r';
-			cout << "Se han descifrado " << bloquesRecorridos*numBytes << "/" 
-			<< bloques*numBytes << " bytes" << flush;
+			cout << "Se ha descifrado el " << setprecision(3) 
+			<< (double(bloquesRecorridos)/bloques)*100 << "% del fichero       " << flush;
 			
 			if(temp!=0){
 		
@@ -290,7 +310,7 @@ void escribirClaves(BigInteger clave1, BigInteger clave2, char tipo[]){
 
 void generarClaves(){
 	int cifras = 100;
-	cout << "Introduzca el número de digitos de la clave:" << endl;
+	cout << "Introduzca el número de bytes de la clave:" << endl;
 	cout << ">> "<< flush;
 	cin >> cifras;
 	srand(time(NULL));
