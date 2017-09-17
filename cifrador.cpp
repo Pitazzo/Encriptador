@@ -106,8 +106,8 @@ void cifrarFichero(ifstream& in, ofstream& out, char extension[], BigInteger n, 
     in.seekg (0, in.beg);
     int numBytes = numeroDeBytes(n);
     int bloques = int(ceil(double(longitud)/double(numBytes)));
-    int bloquesRecorridos = 1;
-	cout << "Comenzando descifrado..." << endl;
+    int bloquesRecorridos = 0;
+
 	cout << "El fichero original ocupa " 
 	<< longitud << " bytes (" << bloques << " bloques de memoria)" <<endl;
 	
@@ -193,24 +193,19 @@ void descifrarFichero(ifstream& in, char salida[], BigInteger n, BigInteger d){
 void cargarClaves(BigInteger& clave1, BigInteger& clave2){
 	clave1 = 0;
 	clave2 = 0;
-	char c;
 	char ruta[100];
 	cout << "Introduzca el nombre del fichero de claves: " << endl;
 	cout << ">> " << flush;
 	cin >> ruta;
 	ifstream claves;
-	claves.open(ruta);
+	claves.open(ruta, ios::binary);
 	if(claves.is_open()){
-		claves.get(c);
-		while(c!='\n'){
-			clave1 = clave1 * 10 + (c-'0');
-			claves.get(c);
-		}
-		claves.get(c);
-		while(c!='\n'){
-			clave2 = clave2 * 10 + (c-'0');
-			claves.get(c);
-		}
+		int numBytes1 = 0, numBytes2 = 0;
+		claves.read(reinterpret_cast <char *>(&numBytes1), sizeof(int));
+		claves.read(reinterpret_cast <char *>(&numBytes2), sizeof(int));
+		clave1 = leerEntero(claves, numBytes1);
+		clave2 = leerEntero(claves, numBytes2);
+		claves.close();
 	}else{
 		cout << "No ha sido posible acceder al fichero de claves." << endl;
 	}
@@ -290,18 +285,26 @@ BigInteger euler(BigInteger p, BigInteger q){
 }
 
 void escribirClaves(BigInteger clave1, BigInteger clave2, char tipo[]){
-	cout << "Introduzca el nombre del archivo donde escribir la clave "<< tipo << "." << endl;
-	cout << "Debe ser de texto, y en caso de no existir, será creado" << endl;
+	cout << "Introduzca el nombre del archivo donde escribir la clave "	<< tipo << "." << endl;
+	cout << "No incluir extensión." << endl;
 	cout << ">> " << flush;
 	char ruta[100];
 	cin >> ruta;
+	if(strcmp(tipo, "publica") == 0){
+		strcat(ruta, ".pbl");
+	}else if(strcmp(tipo, "privada") == 0){
+		strcat(ruta, ".prv");
+	}
 	ofstream claves;
-	claves.open(ruta);
+	claves.open(ruta, ios::binary);
 	if(claves.is_open()){
-		claves << clave1;
-		claves << '\n';
-		claves << clave2;
-		claves << '\n';
+		int numBytes1 = numeroDeBytes(clave1); 
+		int numBytes2 = numeroDeBytes(clave2); 
+		claves.write(reinterpret_cast <char *>(&numBytes1),sizeof(int));
+		claves.write(reinterpret_cast <char *>(&numBytes2),sizeof(int));
+		escribirEntero(claves, clave1, numBytes1);
+		escribirEntero(claves, clave2, numBytes2);
+		claves.close();
 		cout << "Clave " << tipo << " guardada con éxito" << endl;
 	}else{
 		cout << "No ha sido posible escribir el fichero de clave "<< tipo << endl;
